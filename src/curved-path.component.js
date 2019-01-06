@@ -147,3 +147,17 @@ export function SVGCachedPath({ pathId, ...restProps }) {
     <path {...restProps} d={pathCache[pathId]}></path>
   );
 }
+
+/**
+ * creates a svg element with specified width and a height
+ * @param {number} width
+ * @param {number} height
+ */
+export function SVG({ width, height, children, ...restProps }) {
+
+  return (
+    <svg {...restProps} xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" width={width + 'px'} height={height + 'px'} viewBox={'0 0 ' + width + ' ' + height} preserveAspectRatio="xMidYMid meet">
+      {children}
+    </svg>
+  );
+}

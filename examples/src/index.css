@@ -8,3 +8,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.sexy-btn:hover {
+  transform: translateY(-1px);
+  cursor: pointer;
+}
