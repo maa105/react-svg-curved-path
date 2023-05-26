@@ -1,5 +1,5 @@
-import React from 'react';
-import Victor from 'victor';
+import React from "react";
+import Victor from "victor";
 
 /**
  * a cache for paths so that you dont need to recompute them
@@ -19,33 +19,44 @@ function getDrawPoints(points, scaleX, scaleY, useMinRadius) {
   const scaledPoints = points.map((point) => {
     return new Victor(point.x, point.y).multiply(scaleVector);
   });
-  const vectors = scaledPoints.map((point, i, points) => {
-    const next = points[(i + 1 + points.length) % points.length];
-    const ret = { vector: next.clone().subtract(point) };
-    ret.length = ret.vector.length();
-    return ret;
-  });
+  const vectors = scaledPoints
+    .map((point, i, points) => {
+      const scaledPoint = scaledPoints[i];
+      const next = points[(i + 1 + points.length) % points.length];
+      const ret = { vector: next.clone().subtract(point), point, scaledPoint };
+      ret.length = ret.vector.length();
+      return ret;
+    })
+    .filter((vector) => vector.length > 0);
 
   return vectors.map((next, i) => {
-    const point = points[i];
-    const corner = scaledPoints[i];
-    
+    const point = next.point;
+    const corner = next.scaledPoint;
+
     const prev = vectors[(i - 1 + vectors.length) % vectors.length];
 
-    let rPrev = point.rPrev || point.r || .1, rNext = point.rNext || point.r || .1;
-    if((point.useMinRadius === undefined && useMinRadius) || point.useMinRadius) {
+    let rPrev = point.rPrev || point.r || 0.1,
+      rNext = point.rNext || point.r || 0.1;
+    if (
+      (point.useMinRadius === undefined && useMinRadius) ||
+      point.useMinRadius
+    ) {
       rPrev = rNext = Math.min(rPrev * prev.length, rNext * next.length);
       rPrev /= prev.length;
       rNext /= next.length;
     }
 
-    const preCorner = corner.clone().subtract(prev.vector.clone().multiplyScalar(rPrev));
-    const postCorner = corner.clone().add(next.vector.clone().multiplyScalar(rNext));
+    const preCorner = corner
+      .clone()
+      .subtract(prev.vector.clone().multiplyScalar(rPrev));
+    const postCorner = corner
+      .clone()
+      .add(next.vector.clone().multiplyScalar(rNext));
 
     return [
-      preCorner,  // where the curvature starts
-      corner,     // the corner original position (to be used as control point position)
-      postCorner  // where the curvature ends
+      preCorner, // where the curvature starts
+      corner, // the corner original position (to be used as control point position)
+      postCorner, // where the curvature ends
     ];
   });
 }
@@ -58,11 +69,31 @@ function getDrawPoints(points, scaleX, scaleY, useMinRadius) {
  * @returns {string} the svg path string value
  */
 function getPathFromDrawPoints(drawPoints, points, cubic = true) {
-  return drawPoints.map(([preCorner, corner, postCorner], i) => {
-    const point = points[i];
-    const isCubic = point.Q === undefined ? (cubic !== false) : !!point.Q;
-    return (i === 0 ? 'M' : 'L') + preCorner.x + ',' + preCorner.y + ' ' + (isCubic ? ('C' + corner.x + ',' + corner.y + ' ' + corner.x + ',' + corner.y) : ('Q' + corner.x + ',' + corner.y)) + ' ' + postCorner.x + ',' + postCorner.y;
-  }).join(' ') + ' Z';
+  if (!drawPoints.length) {
+    return undefined;
+  }
+  return (
+    drawPoints
+      .map(([preCorner, corner, postCorner], i) => {
+        const point = points[i];
+        const isCubic = point.Q === undefined ? cubic !== false : !!point.Q;
+        return (
+          (i === 0 ? "M" : "L") +
+          preCorner.x +
+          "," +
+          preCorner.y +
+          " " +
+          (isCubic
+            ? "C" + corner.x + "," + corner.y + " " + corner.x + "," + corner.y
+            : "Q" + corner.x + "," + corner.y) +
+          " " +
+          postCorner.x +
+          "," +
+          postCorner.y
+        );
+      })
+      .join(" ") + " Z"
+  );
 }
 
 /**
@@ -71,7 +102,7 @@ function getPathFromDrawPoints(drawPoints, points, cubic = true) {
 export const __PRIVATES__ = {
   pathCache,
   getDrawPoints,
-  getPathFromDrawPoints
+  getPathFromDrawPoints,
 };
 
 /**
@@ -84,7 +115,12 @@ export const __PRIVATES__ = {
  * @returns {string} the svg path string value
  */
 export function getPath(points, cubic, scaleX, scaleY, useMinRadius) {
-  const drawPoints = getDrawPoints(points, scaleX, scaleY, useMinRadius === undefined ? true : useMinRadius);
+  const drawPoints = getDrawPoints(
+    points,
+    scaleX,
+    scaleY,
+    useMinRadius === undefined ? true : useMinRadius
+  );
 
   const pathPoints = getPathFromDrawPoints(drawPoints, points, cubic);
 
@@ -101,10 +137,18 @@ export function getPath(points, cubic, scaleX, scaleY, useMinRadius) {
  * @param {boolean} useMinRadius normalise corners (default true)
  * @returns {string} the svg path string value
  */
-export function preCalculatePath(pathId, points, cubic, scaleX, scaleY, useMinRadius) {
-  const pathPoints = pathCache[pathId] || getPath(points, cubic, scaleX, scaleY, useMinRadius);
+export function preCalculatePath(
+  pathId,
+  points,
+  cubic,
+  scaleX,
+  scaleY,
+  useMinRadius
+) {
+  const pathPoints =
+    pathCache[pathId] || getPath(points, cubic, scaleX, scaleY, useMinRadius);
 
-  if(pathId) {
+  if (pathId) {
     pathCache[pathId] = pathPoints;
   }
 
@@ -128,13 +172,25 @@ export function addToCache(toBeAdded) {
  * @param {number} scaleY (default 1)
  * @param {boolean} useMinRadius normalise corners (default true)
  */
-export function SVGCurvedPath({ pathId, points, cubic, scaleX, scaleY, useMinRadius, ...restProps }) {
-
-  const pathPoints = preCalculatePath(pathId, points, cubic, scaleX, scaleY, useMinRadius);
-
-  return (
-    <path {...restProps} d={pathPoints}></path>
+export function SVGCurvedPath({
+  pathId,
+  points,
+  cubic,
+  scaleX,
+  scaleY,
+  useMinRadius,
+  ...restProps
+}) {
+  const pathPoints = preCalculatePath(
+    pathId,
+    points,
+    cubic,
+    scaleX,
+    scaleY,
+    useMinRadius
   );
+
+  return <path {...restProps} d={pathPoints}></path>;
 }
 
 /**
@@ -142,10 +198,7 @@ export function SVGCurvedPath({ pathId, points, cubic, scaleX, scaleY, useMinRad
  * @param {string} pathId the id of the cached path
  */
 export function SVGCachedPath({ pathId, ...restProps }) {
-
-  return (
-    <path {...restProps} d={pathCache[pathId]}></path>
-  );
+  return <path {...restProps} d={pathCache[pathId]}></path>;
 }
 
 /**
@@ -154,9 +207,16 @@ export function SVGCachedPath({ pathId, ...restProps }) {
  * @param {number} height
  */
 export function SVG({ width, height, children, ...restProps }) {
-
   return (
-    <svg {...restProps} xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" width={width + 'px'} height={height + 'px'} viewBox={'0 0 ' + width + ' ' + height} preserveAspectRatio="xMidYMid meet">
+    <svg
+      {...restProps}
+      xmlns="http://www.w3.org/2000/svg"
+      xmlnsXlink="http://www.w3.org/1999/xlink"
+      width={width + "px"}
+      height={height + "px"}
+      viewBox={"0 0 " + width + " " + height}
+      preserveAspectRatio="xMidYMid meet"
+    >
       {children}
     </svg>
   );
