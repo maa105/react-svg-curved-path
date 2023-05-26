@@ -20,10 +20,14 @@ function getDrawPoints(points, scaleX, scaleY, useMinRadius) {
     return new Victor(point.x, point.y).multiply(scaleVector);
   });
   const vectors = scaledPoints
-    .map((point, i, points) => {
-      const scaledPoint = scaledPoints[i];
-      const next = points[(i + 1 + points.length) % points.length];
-      const ret = { vector: next.clone().subtract(point), point, scaledPoint };
+    .map((scaledPoint, i) => {
+      const next =
+        scaledPoints[(i + 1 + scaledPoints.length) % scaledPoints.length];
+      const ret = {
+        vector: next.clone().subtract(scaledPoint),
+        point: points[i],
+        scaledPoint,
+      };
       ret.length = ret.vector.length();
       return ret;
     })

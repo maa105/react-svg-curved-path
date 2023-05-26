@@ -1,6 +1,6 @@
 {
   "name": "react-svg-curved-path",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "a component that given a path made of points rounds off the corners at each point",
   "main": "dist/curved-path.component.js",
   "scripts": {

@@ -1,5 +1,7 @@
 A component that generates curved cornered SVG path from a points array. See bellow and check out the [small app](https://github.com/maa105/casio-sl-300sv)) I extracted it from. I also put out a [small demo](https://maa105.github.io/react-svg-curved-path/))
 
+NOTE: Do not use version 1.0.3 it has a bug in it
+
 Example code to draw a rounded corner square:
 
 ```
@@ -33,7 +35,7 @@ You can also precashe/precalculate your paths and give them ids for later use:
   // ... then later ...
   <SVG width={200} height={100}>
     <SVGCachedPath
-      pathId={'sexy-btn'} 
+      pathId={'sexy-btn'}
       style={{
         stroke: 'none',
         fill: 'black',
